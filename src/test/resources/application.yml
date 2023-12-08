@@ -1,0 +1,18 @@
+orz:
+  auth:
+    paths:
+      "[/**]":
+        check-request-header: false
+    scopes:
+      ScopeV1:
+        jwt:
+          jks-path: classpath:auth-jwt-test1.jks
+          jks-password: 123456
+          jks-alias-name: test
+          jks-alias-password: 123456
+      ScopeV2:
+        jwt:
+          jks-path: classpath:auth-jwt-test2.jks
+          jks-password: 123456
+          jks-alias-name: test
+          jks-alias-password: 123456
