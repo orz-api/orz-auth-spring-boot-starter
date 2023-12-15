@@ -109,6 +109,7 @@ public abstract class OrzAuthService implements InitializingBean {
         ));
 
         return new OrzAuthTokenBo(
+                userId,
                 accessToken,
                 refreshToken,
                 accessTokenExpiresTime,
@@ -216,7 +217,7 @@ public abstract class OrzAuthService implements InitializingBean {
 
     protected void checkRequestHeader(OrzAuthContextBo context) {
         var payload = context.getTokenPayload();
-        var headers = OrzWebUtils.extractRequestHeaders();
+        var headers = OrzWebUtils.getRequestHeaders();
         var userIdMismatch = false;
         if (StringUtils.isNotBlank(headers.getUserId())) {
             userIdMismatch = !Objects.equals(headers.getUserId(), payload.getUserId());
