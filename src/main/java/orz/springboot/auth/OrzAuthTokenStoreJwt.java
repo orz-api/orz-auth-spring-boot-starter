@@ -83,7 +83,7 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
         // if (payload.getTokenType() == null) {
         //     throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "tokenType"));
         // }
-        if (payload.getTokenType() != null && Objects.equals(payload.getTokenType().name(), type.name())) {
+        if (payload.getTokenType() != null && !Objects.equals(payload.getTokenType().name(), type.name())) {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "tokenType", "expected", type, "actual", payload.getTokenType()));
         }
 
@@ -101,7 +101,7 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
                 payload.getClientType(),
                 payload.getExpiresTime(),
                 payload.getCreateTime(),
-                payload.getTokenType() != null ? OrzAuthTokenTypeBo.valueOf(payload.getTokenType().name()) : null
+                type
         );
     }
 
