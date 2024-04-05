@@ -66,15 +66,19 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
         if (StringUtils.isBlank(payload.getClientType())) {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "clientType"));
         }
+        // createTime 为新添加字段，为保持兼容性不进行校验
+        // if (payload.getCreateTime() == null) {
+        //     throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "createTime"));
+        // }
         if (payload.getExpiresTime() == null) {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "expiresTime"));
         }
-        return new OrzAuthTokenPayloadBo(payload.getUuid(), payload.getUserId(), payload.getClientType(), payload.getExpiresTime());
+        return new OrzAuthTokenPayloadBo(payload.getUuid(), payload.getUserId(), payload.getClientType(), payload.getCreateTime(), payload.getExpiresTime());
     }
 
     private String createToken(OrzAuthTokenPayloadBo payload) {
         var payloadMap = objectMapper.convertValue(
-                new OrzAuthTokenPayloadPo(payload.getUuid(), payload.getUserId(), payload.getClientType(), payload.getExpiresTime()),
+                new OrzAuthTokenPayloadPo(payload.getUuid(), payload.getUserId(), payload.getClientType(), payload.getCreateTime(), payload.getExpiresTime()),
                 PAYLOAD_TYPE
         );
         return JWT.create()

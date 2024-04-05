@@ -92,19 +92,22 @@ public abstract class OrzAuthService implements InitializingBean {
     public OrzAuthTokenBo createToken(String userId, String clientType) {
         var tokenConfig = props.getTokenConfig(scope);
 
-        var accessTokenExpiresTime = OffsetDateTime.now().plusSeconds(tokenConfig.getAccessTokenValiditySeconds());
+        var createTime = OffsetDateTime.now();
+        var accessTokenExpiresTime = createTime.plusSeconds(tokenConfig.getAccessTokenValiditySeconds());
         var accessToken = tokenStore.createAccessToken(new OrzAuthTokenPayloadBo(
                 UUID.randomUUID().toString(),
                 userId,
                 clientType,
+                createTime,
                 accessTokenExpiresTime
         ));
 
-        var refreshTokenExpiresTime = OffsetDateTime.now().plusSeconds(tokenConfig.getRefreshTokenValiditySeconds());
+        var refreshTokenExpiresTime = createTime.plusSeconds(tokenConfig.getRefreshTokenValiditySeconds());
         var refreshToken = tokenStore.createRefreshToken(new OrzAuthTokenPayloadBo(
                 UUID.randomUUID().toString(),
                 userId,
                 clientType,
+                createTime,
                 refreshTokenExpiresTime
         ));
 
