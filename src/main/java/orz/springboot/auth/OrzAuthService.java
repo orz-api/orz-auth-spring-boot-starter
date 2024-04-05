@@ -17,10 +17,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.server.ResponseStatusException;
 import orz.springboot.auth.annotation.OrzAuth;
-import orz.springboot.auth.model.OrzAuthConfigBo;
-import orz.springboot.auth.model.OrzAuthContextBo;
-import orz.springboot.auth.model.OrzAuthTokenBo;
-import orz.springboot.auth.model.OrzAuthTokenPayloadBo;
+import orz.springboot.auth.model.*;
 import orz.springboot.base.OrzBaseUtils;
 import orz.springboot.web.OrzWebUtils;
 
@@ -92,23 +89,26 @@ public abstract class OrzAuthService implements InitializingBean {
     public OrzAuthTokenBo createToken(String userId, String clientType) {
         var tokenConfig = props.getTokenConfig(scope);
 
+        var uuid = UUID.randomUUID().toString();
         var createTime = OffsetDateTime.now();
         var accessTokenExpiresTime = createTime.plusSeconds(tokenConfig.getAccessTokenValiditySeconds());
-        var accessToken = tokenStore.createAccessToken(new OrzAuthTokenPayloadBo(
-                UUID.randomUUID().toString(),
+        var accessToken = tokenStore.createToken(new OrzAuthTokenPayloadBo(
+                uuid,
                 userId,
                 clientType,
+                accessTokenExpiresTime,
                 createTime,
-                accessTokenExpiresTime
+                OrzAuthTokenTypeBo.ACCESS
         ));
 
         var refreshTokenExpiresTime = createTime.plusSeconds(tokenConfig.getRefreshTokenValiditySeconds());
-        var refreshToken = tokenStore.createRefreshToken(new OrzAuthTokenPayloadBo(
-                UUID.randomUUID().toString(),
+        var refreshToken = tokenStore.createToken(new OrzAuthTokenPayloadBo(
+                uuid,
                 userId,
                 clientType,
+                refreshTokenExpiresTime,
                 createTime,
-                refreshTokenExpiresTime
+                OrzAuthTokenTypeBo.REFRESH
         ));
 
         return new OrzAuthTokenBo(
@@ -121,7 +121,8 @@ public abstract class OrzAuthService implements InitializingBean {
     }
 
     public OrzAuthTokenBo refreshToken(String token) throws OrzAuthTokenVerifyException {
-        var tokenPayload = tokenStore.verifyToken(token);
+        var tokenPayload = tokenStore.verifyToken(token, OrzAuthTokenTypeBo.REFRESH);
+        checkTokenPayload(tokenPayload);
         return createToken(tokenPayload.getUserId(), tokenPayload.getClientType());
     }
 
@@ -204,10 +205,15 @@ public abstract class OrzAuthService implements InitializingBean {
         }
 
         try {
-            return tokenStore.verifyToken(accessToken);
+            var tokenPayload = tokenStore.verifyToken(accessToken, OrzAuthTokenTypeBo.ACCESS);
+            checkTokenPayload(tokenPayload);
+            return tokenPayload;
         } catch (OrzAuthTokenVerifyException e) {
             return nullOrThrow.apply(new ResponseStatusException(401, e.getError().name(), e));
         }
+    }
+
+    protected void checkTokenPayload(OrzAuthTokenPayloadBo payload) throws OrzAuthTokenVerifyException {
     }
 
     protected void checkClientType(OrzAuthContextBo context) {

@@ -1,11 +1,10 @@
 package orz.springboot.auth;
 
 import orz.springboot.auth.model.OrzAuthTokenPayloadBo;
+import orz.springboot.auth.model.OrzAuthTokenTypeBo;
 
 public interface OrzAuthTokenStore {
-    String createAccessToken(OrzAuthTokenPayloadBo payload);
+    String createToken(OrzAuthTokenPayloadBo payload);
 
-    String createRefreshToken(OrzAuthTokenPayloadBo payload);
-
-    OrzAuthTokenPayloadBo verifyToken(String token) throws OrzAuthTokenVerifyException;
+    OrzAuthTokenPayloadBo verifyToken(String token, OrzAuthTokenTypeBo type) throws OrzAuthTokenVerifyException;
 }

@@ -14,7 +14,9 @@ public class OrzAuthTokenPayloadPo {
     private String uuid;
     private String userId;
     private String clientType;
+    private OffsetDateTime expiresTime;
     @Nullable
     private OffsetDateTime createTime;
-    private OffsetDateTime expiresTime;
+    @Nullable
+    private OrzAuthTokenTypePo tokenType;
 }
