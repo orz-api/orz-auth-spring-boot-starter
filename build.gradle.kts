@@ -10,7 +10,9 @@ group = "io.github.orz-api"
 version = "0.0.2-SNAPSHOT"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
     withJavadocJar()
     withSourcesJar()
 }
@@ -40,6 +42,7 @@ dependencies {
 
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // fix test error [java.net.HttpRetryException: cannot retry due to server authentication, in streaming mode]
     testImplementation("org.apache.httpcomponents.client5:httpclient5:5.3.1")
