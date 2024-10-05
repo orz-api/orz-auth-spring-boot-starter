@@ -11,4 +11,5 @@ public class OrzAuthTokenBo {
     private final String refreshToken;
     private final OffsetDateTime accessTokenExpiresTime;
     private final OffsetDateTime refreshTokenExpiresTime;
+    private final String userRole;
 }

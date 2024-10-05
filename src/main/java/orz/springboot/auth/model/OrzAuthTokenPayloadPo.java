@@ -19,4 +19,6 @@ public class OrzAuthTokenPayloadPo {
     private OffsetDateTime createTime;
     @Nullable
     private OrzAuthTokenTypePo tokenType;
+    @Nullable
+    private String userRole;
 }

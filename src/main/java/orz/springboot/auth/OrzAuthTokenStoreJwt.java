@@ -48,7 +48,8 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
                         payload.getClientType(),
                         payload.getExpiresTime(),
                         payload.getCreateTime(),
-                        payload.getTokenType() != null ? OrzAuthTokenTypePo.valueOf(payload.getTokenType().name()) : null
+                        payload.getTokenType() != null ? OrzAuthTokenTypePo.valueOf(payload.getTokenType().name()) : null,
+                        payload.getUserRole()
                 ),
                 PAYLOAD_TYPE
         );
@@ -101,7 +102,8 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
                 payload.getClientType(),
                 payload.getExpiresTime(),
                 payload.getCreateTime(),
-                type
+                type,
+                payload.getUserRole()
         );
     }
 

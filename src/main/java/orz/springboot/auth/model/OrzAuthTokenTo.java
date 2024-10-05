@@ -15,6 +15,7 @@ public class OrzAuthTokenTo {
     private String refreshToken;
     private OffsetDateTime accessTokenExpiresTime;
     private OffsetDateTime refreshTokenExpiresTime;
+    private String userRole;
 
     public static OrzAuthTokenTo of(OrzAuthTokenBo bo) {
         return new OrzAuthTokenTo(
@@ -22,7 +23,8 @@ public class OrzAuthTokenTo {
                 bo.getAccessToken(),
                 bo.getRefreshToken(),
                 bo.getAccessTokenExpiresTime(),
-                bo.getRefreshTokenExpiresTime()
+                bo.getRefreshTokenExpiresTime(),
+                bo.getUserRole()
         );
     }
 }
