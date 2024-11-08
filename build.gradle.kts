@@ -2,12 +2,12 @@ plugins {
     signing
     `java-library`
     `maven-publish`
-    id("org.springframework.boot") version "3.3.2"
+    id("org.springframework.boot") version "3.3.5"
     id("io.spring.dependency-management") version "1.1.6"
 }
 
 group = "io.github.orz-api"
-version = "0.0.2-SNAPSHOT"
+version = "0.0.3-SNAPSHOT"
 
 java {
     toolchain {
@@ -37,7 +37,7 @@ repositories {
 }
 
 dependencies {
-    api("io.github.orz-api:orz-web-spring-boot-starter:0.0.2-SNAPSHOT")
+    api("io.github.orz-api:orz-web-spring-boot-starter:0.0.3-SNAPSHOT")
     api("com.auth0:java-jwt:4.4.0")
 
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")

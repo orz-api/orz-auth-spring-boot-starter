@@ -1,3 +1,6 @@
+spring:
+  application:
+    name: orz-auth-spring-boot-starter-test
 orz:
   auth:
     paths:
