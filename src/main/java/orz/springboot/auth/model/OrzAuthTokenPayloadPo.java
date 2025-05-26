@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -21,4 +22,6 @@ public class OrzAuthTokenPayloadPo {
     private OrzAuthTokenTypePo tokenType;
     @Nullable
     private String userRole;
+    @Nullable
+    private Map<String, Object> extra;
 }

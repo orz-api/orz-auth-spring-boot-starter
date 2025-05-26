@@ -22,10 +22,7 @@ import orz.springboot.base.OrzBaseUtils;
 import orz.springboot.web.OrzWebUtils;
 
 import java.time.OffsetDateTime;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 
 import static orz.springboot.alarm.OrzAlarmUtils.alarm;
@@ -86,7 +83,7 @@ public abstract class OrzAuthService implements InitializingBean {
         }
     }
 
-    public OrzAuthTokenBo createToken(String userId, String clientType, @Nullable String userRole) {
+    public OrzAuthTokenBo createToken(String userId, String clientType, @Nullable String userRole, @Nullable Map<String, Object> extra) {
         var tokenConfig = props.getTokenConfig(scope);
 
         var uuid = UUID.randomUUID().toString();
@@ -99,7 +96,8 @@ public abstract class OrzAuthService implements InitializingBean {
                 accessTokenExpiresTime,
                 createTime,
                 OrzAuthTokenTypeBo.ACCESS,
-                userRole
+                userRole,
+                extra
         ));
 
         var refreshTokenExpiresTime = createTime.plusSeconds(tokenConfig.getRefreshTokenValiditySeconds());
@@ -110,7 +108,8 @@ public abstract class OrzAuthService implements InitializingBean {
                 refreshTokenExpiresTime,
                 createTime,
                 OrzAuthTokenTypeBo.REFRESH,
-                userRole
+                userRole,
+                extra
         ));
 
         return new OrzAuthTokenBo(
@@ -126,7 +125,7 @@ public abstract class OrzAuthService implements InitializingBean {
     public OrzAuthTokenBo refreshToken(String token) throws OrzAuthTokenVerifyException {
         var tokenPayload = tokenStore.verifyToken(token, OrzAuthTokenTypeBo.REFRESH);
         checkTokenPayload(tokenPayload);
-        return createToken(tokenPayload.getUserId(), tokenPayload.getClientType(), tokenPayload.getUserRole());
+        return createToken(tokenPayload.getUserId(), tokenPayload.getClientType(), tokenPayload.getUserRole(), tokenPayload.getExtra());
     }
 
     public void authorize(HttpServletRequest request, HttpServletResponse response, Object handler) {

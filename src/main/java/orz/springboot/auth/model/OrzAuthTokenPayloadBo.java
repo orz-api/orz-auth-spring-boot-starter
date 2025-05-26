@@ -4,6 +4,7 @@ import jakarta.annotation.Nullable;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 @Data
 public class OrzAuthTokenPayloadBo {
@@ -17,4 +18,6 @@ public class OrzAuthTokenPayloadBo {
     private final OrzAuthTokenTypeBo tokenType;
     @Nullable
     private final String userRole;
+    @Nullable
+    private final Map<String, Object> extra;
 }
