@@ -1,8 +1,10 @@
 package orz.springboot.auth.model;
 
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 @Data
 public class OrzAuthTokenBo {
@@ -11,5 +13,6 @@ public class OrzAuthTokenBo {
     private final String refreshToken;
     private final OffsetDateTime accessTokenExpiresTime;
     private final OffsetDateTime refreshTokenExpiresTime;
-    private final String userRole;
+    @Nullable
+    private final Map<String, Object> extras;
 }

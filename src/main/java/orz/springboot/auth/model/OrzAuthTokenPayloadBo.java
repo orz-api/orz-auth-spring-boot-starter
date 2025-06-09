@@ -17,7 +17,5 @@ public class OrzAuthTokenPayloadBo {
     @Nullable
     private final OrzAuthTokenTypeBo tokenType;
     @Nullable
-    private final String userRole;
-    @Nullable
-    private final Map<String, Object> extra;
+    private final Map<String, Object> extras;
 }

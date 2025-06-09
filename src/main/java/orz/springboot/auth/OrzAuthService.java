@@ -83,7 +83,7 @@ public abstract class OrzAuthService implements InitializingBean {
         }
     }
 
-    public OrzAuthTokenBo createToken(String userId, String clientType, @Nullable String userRole, @Nullable Map<String, Object> extra) {
+    public OrzAuthTokenBo createToken(String userId, String clientType, @Nullable Map<String, Object> extras) {
         var tokenConfig = props.getTokenConfig(scope);
 
         var uuid = UUID.randomUUID().toString();
@@ -96,8 +96,7 @@ public abstract class OrzAuthService implements InitializingBean {
                 accessTokenExpiresTime,
                 createTime,
                 OrzAuthTokenTypeBo.ACCESS,
-                userRole,
-                extra
+                extras
         ));
 
         var refreshTokenExpiresTime = createTime.plusSeconds(tokenConfig.getRefreshTokenValiditySeconds());
@@ -108,8 +107,7 @@ public abstract class OrzAuthService implements InitializingBean {
                 refreshTokenExpiresTime,
                 createTime,
                 OrzAuthTokenTypeBo.REFRESH,
-                userRole,
-                extra
+                extras
         ));
 
         return new OrzAuthTokenBo(
@@ -118,14 +116,14 @@ public abstract class OrzAuthService implements InitializingBean {
                 refreshToken,
                 accessTokenExpiresTime,
                 refreshTokenExpiresTime,
-                userRole
+                extras
         );
     }
 
     public OrzAuthTokenBo refreshToken(String token) throws OrzAuthTokenVerifyException {
         var tokenPayload = tokenStore.verifyToken(token, OrzAuthTokenTypeBo.REFRESH);
         checkTokenPayload(tokenPayload);
-        return createToken(tokenPayload.getUserId(), tokenPayload.getClientType(), tokenPayload.getUserRole(), tokenPayload.getExtra());
+        return createToken(tokenPayload.getUserId(), tokenPayload.getClientType(), tokenPayload.getExtras());
     }
 
     public void authorize(HttpServletRequest request, HttpServletResponse response, Object handler) {

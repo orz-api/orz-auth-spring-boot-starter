@@ -49,8 +49,7 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
                         payload.getExpiresTime(),
                         payload.getCreateTime(),
                         payload.getTokenType() != null ? OrzAuthTokenTypePo.valueOf(payload.getTokenType().name()) : null,
-                        payload.getUserRole(),
-                        payload.getExtra()
+                        payload.getExtras()
                 ),
                 PAYLOAD_TYPE
         );
@@ -81,22 +80,20 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "clientType"));
         }
 
-        // tokenType 为新添加字段，为保持兼容性不进行校验
-        // if (payload.getTokenType() == null) {
-        //     throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "tokenType"));
-        // }
-        if (payload.getTokenType() != null && !Objects.equals(payload.getTokenType().name(), type.name())) {
+        if (payload.getTokenType() == null) {
+            throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "tokenType"));
+        }
+        if (!Objects.equals(payload.getTokenType().name(), type.name())) {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "tokenType", "expected", type, "actual", payload.getTokenType()));
         }
 
-        // createTime 为新添加字段，为保持兼容性不进行校验
-        // if (payload.getCreateTime() == null) {
-        //     throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "createTime"));
-        // }
-
+        if (payload.getCreateTime() == null) {
+            throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "createTime"));
+        }
         if (payload.getExpiresTime() == null) {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "expiresTime"));
         }
+
         return new OrzAuthTokenPayloadBo(
                 payload.getUuid(),
                 payload.getUserId(),
@@ -104,8 +101,7 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
                 payload.getExpiresTime(),
                 payload.getCreateTime(),
                 type,
-                payload.getUserRole(),
-                payload.getExtra()
+                payload.getExtras()
         );
     }
 
