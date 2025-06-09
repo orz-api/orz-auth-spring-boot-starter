@@ -17,6 +17,7 @@ import orz.springboot.auth.model.OrzAuthTokenTypePo;
 import java.security.KeyStore;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Objects;
@@ -45,16 +46,16 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
                 new OrzAuthTokenPayloadPo(
                         payload.getUuid(),
                         payload.getUserId(),
+                        payload.getUserRole(),
                         payload.getClientType(),
                         payload.getExpiresTime(),
                         payload.getCreateTime(),
-                        payload.getTokenType() != null ? OrzAuthTokenTypePo.valueOf(payload.getTokenType().name()) : null,
+                        OrzAuthTokenTypePo.valueOf(payload.getTokenType().name()),
                         payload.getExtras()
                 ),
                 PAYLOAD_TYPE
         );
         return JWT.create()
-                .withExpiresAt(payload.getExpiresTime().toInstant())
                 .withPayload(payloadMap)
                 .sign(algorithm);
     }
@@ -74,7 +75,10 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "uuid"));
         }
         if (StringUtils.isBlank(payload.getUserId())) {
-            throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "bearerId"));
+            throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "userId"));
+        }
+        if (StringUtils.isBlank(payload.getUserRole())) {
+            throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "userRole"));
         }
         if (StringUtils.isBlank(payload.getClientType())) {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "clientType"));
@@ -93,10 +97,15 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
         if (payload.getExpiresTime() == null) {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "expiresTime"));
         }
+        var now = OffsetDateTime.now();
+        if (payload.getExpiresTime().isBefore(now)) {
+            throw new OrzAuthTokenVerifyException(TOKEN_EXPIRED, (Throwable) null);
+        }
 
         return new OrzAuthTokenPayloadBo(
                 payload.getUuid(),
                 payload.getUserId(),
+                payload.getUserRole(),
                 payload.getClientType(),
                 payload.getExpiresTime(),
                 payload.getCreateTime(),

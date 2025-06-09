@@ -13,6 +13,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class OrzAuthTokenTo {
     private String userId;
+    private String userRole;
     private String accessToken;
     private String refreshToken;
     private OffsetDateTime accessTokenExpiresTime;
@@ -23,6 +24,7 @@ public class OrzAuthTokenTo {
     public static OrzAuthTokenTo of(OrzAuthTokenBo bo) {
         return new OrzAuthTokenTo(
                 bo.getUserId(),
+                bo.getUserRole(),
                 bo.getAccessToken(),
                 bo.getRefreshToken(),
                 bo.getAccessTokenExpiresTime(),

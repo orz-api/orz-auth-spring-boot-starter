@@ -14,11 +14,10 @@ import java.util.Map;
 public class OrzAuthTokenPayloadPo {
     private String uuid;
     private String userId;
+    private String userRole;
     private String clientType;
     private OffsetDateTime expiresTime;
-    @Nullable
     private OffsetDateTime createTime;
-    @Nullable
     private OrzAuthTokenTypePo tokenType;
     @Nullable
     private Map<String, Object> extras;
