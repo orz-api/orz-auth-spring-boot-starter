@@ -14,7 +14,7 @@ import java.util.Map;
 public class OrzAuthTokenPayloadPo {
     private String uuid;
     private String userId;
-    private String userRole;
+    private String userType;
     private String clientType;
     private OffsetDateTime expiresTime;
     private OffsetDateTime createTime;

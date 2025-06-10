@@ -46,7 +46,7 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
                 new OrzAuthTokenPayloadPo(
                         payload.getUuid(),
                         payload.getUserId(),
-                        payload.getUserRole(),
+                        payload.getUserType(),
                         payload.getClientType(),
                         payload.getExpiresTime(),
                         payload.getCreateTime(),
@@ -77,8 +77,8 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
         if (StringUtils.isBlank(payload.getUserId())) {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "userId"));
         }
-        if (StringUtils.isBlank(payload.getUserRole())) {
-            throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "userRole"));
+        if (StringUtils.isBlank(payload.getUserType())) {
+            throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "userType"));
         }
         if (StringUtils.isBlank(payload.getClientType())) {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "clientType"));
@@ -105,7 +105,7 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
         return new OrzAuthTokenPayloadBo(
                 payload.getUuid(),
                 payload.getUserId(),
-                payload.getUserRole(),
+                payload.getUserType(),
                 payload.getClientType(),
                 payload.getExpiresTime(),
                 payload.getCreateTime(),

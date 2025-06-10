@@ -83,7 +83,7 @@ public abstract class OrzAuthService implements InitializingBean {
         }
     }
 
-    public OrzAuthTokenBo createToken(String userId, String userRole, String clientType, @Nullable Map<String, Object> extras) {
+    public OrzAuthTokenBo createToken(String userId, String userType, String clientType, @Nullable Map<String, Object> extras) {
         var tokenConfig = props.getTokenConfig(scope);
 
         var uuid = UUID.randomUUID().toString();
@@ -92,7 +92,7 @@ public abstract class OrzAuthService implements InitializingBean {
         var accessToken = tokenStore.createToken(new OrzAuthTokenPayloadBo(
                 uuid,
                 userId,
-                userRole,
+                userType,
                 clientType,
                 accessTokenExpiresTime,
                 createTime,
@@ -104,7 +104,7 @@ public abstract class OrzAuthService implements InitializingBean {
         var refreshToken = tokenStore.createToken(new OrzAuthTokenPayloadBo(
                 uuid,
                 userId,
-                userRole,
+                userType,
                 clientType,
                 refreshTokenExpiresTime,
                 createTime,
@@ -114,7 +114,7 @@ public abstract class OrzAuthService implements InitializingBean {
 
         return new OrzAuthTokenBo(
                 userId,
-                userRole,
+                userType,
                 accessToken,
                 refreshToken,
                 accessTokenExpiresTime,
@@ -126,7 +126,7 @@ public abstract class OrzAuthService implements InitializingBean {
     public OrzAuthTokenBo refreshToken(String token) throws OrzAuthTokenVerifyException {
         var tokenPayload = tokenStore.verifyToken(token, OrzAuthTokenTypeBo.REFRESH);
         checkTokenPayload(tokenPayload);
-        return createToken(tokenPayload.getUserId(), tokenPayload.getUserRole(), tokenPayload.getClientType(), tokenPayload.getExtras());
+        return createToken(tokenPayload.getUserId(), tokenPayload.getUserType(), tokenPayload.getClientType(), tokenPayload.getExtras());
     }
 
     public void authorize(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -239,42 +239,42 @@ public abstract class OrzAuthService implements InitializingBean {
         if (userIdMismatch) {
             log.error(desc("request header mismatch", "field", "userId",
                     "headerUserId", headers.getUserId(),
-                    "headerUserRole", headers.getUserRole(),
+                    "headerUserType", headers.getUserType(),
                     "headerClientType", headers.getClientType(),
                     "tokenUserId", payload.getUserId(),
-                    "tokenUserRole", payload.getUserRole(),
+                    "tokenUserType", payload.getUserType(),
                     "tokenClientType", payload.getClientType()
             ));
             alarm("@ORZ_AUTH_CHECK_HEADER_FAILED", "userId mismatch", null, hashMap(
                     "headerUserId", headers.getUserId(),
-                    "headerUserRole", headers.getUserRole(),
+                    "headerUserType", headers.getUserType(),
                     "headerClientType", headers.getClientType(),
                     "tokenUserId", payload.getUserId(),
-                    "tokenUserRole", payload.getUserRole(),
+                    "tokenUserType", payload.getUserType(),
                     "tokenClientType", payload.getClientType()
             ));
         }
-        var userRoleMismatch = false;
-        if (StringUtils.isNotBlank(headers.getUserRole())) {
-            userRoleMismatch = !Objects.equals(headers.getUserRole(), payload.getUserRole());
+        var userTypeMismatch = false;
+        if (StringUtils.isNotBlank(headers.getUserType())) {
+            userTypeMismatch = !Objects.equals(headers.getUserType(), payload.getUserType());
         } else {
-            userRoleMismatch = !context.getConfig().isOptional();
+            userTypeMismatch = !context.getConfig().isOptional();
         }
-        if (userRoleMismatch) {
-            log.error(desc("request header mismatch", "field", "userRole",
+        if (userTypeMismatch) {
+            log.error(desc("request header mismatch", "field", "userType",
                     "headerUserId", headers.getUserId(),
-                    "headerUserRole", headers.getUserRole(),
+                    "headerUserType", headers.getUserType(),
                     "headerClientType", headers.getClientType(),
                     "tokenUserId", payload.getUserId(),
-                    "tokenUserRole", payload.getUserRole(),
+                    "tokenUserType", payload.getUserType(),
                     "tokenClientType", payload.getClientType()
             ));
-            alarm("@ORZ_AUTH_CHECK_HEADER_FAILED", "userRole mismatch", null, hashMap(
+            alarm("@ORZ_AUTH_CHECK_HEADER_FAILED", "userType mismatch", null, hashMap(
                     "headerUserId", headers.getUserId(),
-                    "headerUserRole", headers.getUserRole(),
+                    "headerUserType", headers.getUserType(),
                     "headerClientType", headers.getClientType(),
                     "tokenUserId", payload.getUserId(),
-                    "tokenUserRole", payload.getUserRole(),
+                    "tokenUserType", payload.getUserType(),
                     "tokenClientType", payload.getClientType()
             ));
         }
@@ -282,22 +282,22 @@ public abstract class OrzAuthService implements InitializingBean {
         if (clientTypeMismatch) {
             log.error(desc("request header mismatch", "field", "clientType",
                     "headerUserId", headers.getUserId(),
-                    "headerUserRole", headers.getUserRole(),
+                    "headerUserType", headers.getUserType(),
                     "headerClientType", headers.getClientType(),
                     "tokenUserId", payload.getUserId(),
-                    "tokenUserRole", payload.getUserRole(),
+                    "tokenUserType", payload.getUserType(),
                     "tokenClientType", payload.getClientType()
             ));
             alarm("@ORZ_AUTH_CHECK_HEADER_FAILED", "clientType mismatch", null, hashMap(
                     "headerUserId", headers.getUserId(),
-                    "headerUserRole", headers.getUserRole(),
+                    "headerUserType", headers.getUserType(),
                     "headerClientType", headers.getClientType(),
                     "tokenUserId", payload.getUserId(),
-                    "tokenUserRole", payload.getUserRole(),
+                    "tokenUserType", payload.getUserType(),
                     "tokenClientType", payload.getClientType()
             ));
         }
-        if (userIdMismatch || userRoleMismatch || clientTypeMismatch) {
+        if (userIdMismatch || userTypeMismatch || clientTypeMismatch) {
             if (!context.getConfig().isOptional()) {
                 throw new ResponseStatusException(403, "request header invalid", null);
             }

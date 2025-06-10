@@ -9,7 +9,7 @@ import java.util.Map;
 @Data
 public class OrzAuthTokenBo {
     private final String userId;
-    private final String userRole;
+    private final String userType;
     private final String accessToken;
     private final String refreshToken;
     private final OffsetDateTime accessTokenExpiresTime;

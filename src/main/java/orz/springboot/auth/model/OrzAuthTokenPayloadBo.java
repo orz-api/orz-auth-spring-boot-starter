@@ -10,7 +10,7 @@ import java.util.Map;
 public class OrzAuthTokenPayloadBo {
     private final String uuid;
     private final String userId;
-    private final String userRole;
+    private final String userType;
     private final String clientType;
     private final OffsetDateTime expiresTime;
     private final OffsetDateTime createTime;

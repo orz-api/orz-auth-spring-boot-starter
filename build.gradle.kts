@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.github.orz-api"
-version = "0.0.3-2"
+version = "0.0.3-3"
 
 java {
     toolchain {
@@ -41,7 +41,7 @@ repositories {
 }
 
 dependencies {
-    api("io.github.orz-api:orz-web-spring-boot-starter:0.0.3")
+    api("io.github.orz-api:orz-web-spring-boot-starter:0.0.3-1")
     api("com.auth0:java-jwt:4.4.0")
 
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
