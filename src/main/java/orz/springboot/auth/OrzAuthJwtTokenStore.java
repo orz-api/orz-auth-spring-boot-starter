@@ -4,8 +4,6 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.TokenExpiredException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ResourceUtils;
@@ -13,6 +11,8 @@ import orz.springboot.auth.model.OrzAuthTokenPayloadBo;
 import orz.springboot.auth.model.OrzAuthTokenPayloadPo;
 import orz.springboot.auth.model.OrzAuthTokenTypeBo;
 import orz.springboot.auth.model.OrzAuthTokenTypePo;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.security.KeyStore;
 import java.security.interfaces.RSAPrivateKey;
@@ -26,23 +26,23 @@ import static orz.springboot.auth.OrzAuthTokenVerifyError.TOKEN_EXPIRED;
 import static orz.springboot.auth.OrzAuthTokenVerifyError.TOKEN_INVALID;
 import static orz.springboot.base.description.OrzDescriptionUtils.descValues;
 
-public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
+public class OrzAuthJwtTokenStore implements OrzAuthTokenStore {
     private static final TypeReference<LinkedHashMap<String, Object>> PAYLOAD_TYPE = new TypeReference<>() {
     };
 
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
     private final Algorithm algorithm;
     private final JWTVerifier verifier;
 
-    public OrzAuthTokenStoreJwt(ObjectMapper objectMapper, String jksPath, String jksPassword, String jksAliasName, String jksAliasPassword) {
-        this.objectMapper = objectMapper;
+    public OrzAuthJwtTokenStore(JsonMapper jsonMapper, String jksPath, String jksPassword, String jksAliasName, String jksAliasPassword) {
+        this.jsonMapper = jsonMapper;
         this.algorithm = loadJksAlgorithm(jksPath, jksPassword, jksAliasName, jksAliasPassword);
         this.verifier = JWT.require(algorithm).build();
     }
 
     @Override
     public String createToken(OrzAuthTokenPayloadBo payload) {
-        var payloadMap = objectMapper.convertValue(
+        var payloadMap = jsonMapper.convertValue(
                 new OrzAuthTokenPayloadPo(
                         payload.getUuid(),
                         payload.getUserId(),
@@ -51,6 +51,7 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
                         payload.getExpiresTime(),
                         payload.getCreateTime(),
                         OrzAuthTokenTypePo.valueOf(payload.getTokenType().name()),
+                        payload.getIssuer(),
                         payload.getExtras()
                 ),
                 PAYLOAD_TYPE
@@ -65,7 +66,7 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
         var payload = (OrzAuthTokenPayloadPo) null;
         try {
             var payloadBase64 = verifier.verify(token).getPayload();
-            payload = objectMapper.readValue(Base64.getDecoder().decode(payloadBase64), OrzAuthTokenPayloadPo.class);
+            payload = jsonMapper.readValue(Base64.getDecoder().decode(payloadBase64), OrzAuthTokenPayloadPo.class);
         } catch (TokenExpiredException e) {
             throw new OrzAuthTokenVerifyException(TOKEN_EXPIRED, e);
         } catch (Exception e) {
@@ -82,6 +83,9 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
         }
         if (StringUtils.isBlank(payload.getClientType())) {
             throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "clientType"));
+        }
+        if (StringUtils.isBlank(payload.getIssuer())) {
+            throw new OrzAuthTokenVerifyException(TOKEN_INVALID, descValues("field", "issuer"));
         }
 
         if (payload.getTokenType() == null) {
@@ -110,6 +114,7 @@ public class OrzAuthTokenStoreJwt implements OrzAuthTokenStore {
                 payload.getExpiresTime(),
                 payload.getCreateTime(),
                 type,
+                payload.getIssuer(),
                 payload.getExtras()
         );
     }

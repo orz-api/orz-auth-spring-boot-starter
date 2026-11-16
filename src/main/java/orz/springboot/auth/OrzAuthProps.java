@@ -67,6 +67,9 @@ public class OrzAuthProps {
 
         @Positive
         private int refreshTokenValiditySeconds = 2592000;
+
+        @NotBlank
+        private String issuer = "orz-auth";
     }
 
     @Data

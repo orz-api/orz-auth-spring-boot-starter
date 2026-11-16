@@ -11,24 +11,26 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrzAuthTokenTo {
+public class OrzAuthTokenInfoTo {
     private String userId;
     private String userType;
     private String accessToken;
     private String refreshToken;
     private OffsetDateTime accessTokenExpiresTime;
     private OffsetDateTime refreshTokenExpiresTime;
+    private String issuer;
     @Nullable
     private Map<String, Object> extras;
 
-    public static OrzAuthTokenTo of(OrzAuthTokenBo bo) {
-        return new OrzAuthTokenTo(
+    public static OrzAuthTokenInfoTo of(OrzAuthTokenInfoBo bo) {
+        return new OrzAuthTokenInfoTo(
                 bo.getUserId(),
                 bo.getUserType(),
                 bo.getAccessToken(),
                 bo.getRefreshToken(),
                 bo.getAccessTokenExpiresTime(),
                 bo.getRefreshTokenExpiresTime(),
+                bo.getIssuer(),
                 bo.getExtras()
         );
     }

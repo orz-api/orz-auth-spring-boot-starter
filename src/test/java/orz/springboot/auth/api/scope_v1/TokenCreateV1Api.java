@@ -19,7 +19,7 @@ public class TokenCreateV1Api {
     }
 
     public TokenCreateV1ApiRsp request(@Validated @RequestBody TokenCreateV1ApiReq req) {
-        var token = authService.createToken("1", "test", "visitor");
+        var token = authService.createToken("1", "visitor", "test", null);
         return new TokenCreateV1ApiRsp(
                 token.getAccessToken(), token.getRefreshToken(),
                 token.getAccessTokenExpiresTime(), token.getRefreshTokenExpiresTime()

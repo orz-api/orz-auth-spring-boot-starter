@@ -19,6 +19,7 @@ public class OrzAuthTokenPayloadPo {
     private OffsetDateTime expiresTime;
     private OffsetDateTime createTime;
     private OrzAuthTokenTypePo tokenType;
+    private String issuer;
     @Nullable
     private Map<String, Object> extras;
 }

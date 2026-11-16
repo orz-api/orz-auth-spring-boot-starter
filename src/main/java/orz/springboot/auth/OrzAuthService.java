@@ -1,14 +1,13 @@
 package orz.springboot.auth;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -16,10 +15,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.server.ResponseStatusException;
+import orz.springboot.alarm.exception.OrzUnexpectedException;
 import orz.springboot.auth.annotation.OrzAuth;
 import orz.springboot.auth.model.*;
 import orz.springboot.base.OrzBaseUtils;
 import orz.springboot.web.OrzWebUtils;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -35,11 +36,11 @@ public abstract class OrzAuthService implements InitializingBean {
     private static final String USER_PAYLOAD_ATTRIBUTE_NAME = "ORZ_AUTH_USER_PAYLOAD";
 
     public static boolean isCurrentAuthorized() {
-        return OrzBaseUtils.getRequestAttribute(TOKEN_PAYLOAD_ATTRIBUTE_NAME).isPresent();
+        return OrzWebUtils.getRequestAttribute(TOKEN_PAYLOAD_ATTRIBUTE_NAME).isPresent();
     }
 
     public static OrzAuthTokenPayloadBo getCurrentTokenPayload() {
-        return OrzBaseUtils.<OrzAuthTokenPayloadBo>getRequestAttribute(TOKEN_PAYLOAD_ATTRIBUTE_NAME)
+        return OrzWebUtils.<OrzAuthTokenPayloadBo>getRequestAttribute(TOKEN_PAYLOAD_ATTRIBUTE_NAME)
                 .orElseThrow(() -> new ResponseStatusException(401, "unauthorized", null));
     }
 
@@ -47,7 +48,7 @@ public abstract class OrzAuthService implements InitializingBean {
         if (!isCurrentAuthorized()) {
             throw new ResponseStatusException(401, "unauthorized", null);
         }
-        return OrzBaseUtils.<U>getRequestAttribute(USER_PAYLOAD_ATTRIBUTE_NAME)
+        return OrzWebUtils.<U>getRequestAttribute(USER_PAYLOAD_ATTRIBUTE_NAME)
                 .orElse(null);
     }
 
@@ -55,15 +56,9 @@ public abstract class OrzAuthService implements InitializingBean {
     private final String scope;
 
     @Getter(AccessLevel.PROTECTED)
-    @Setter(AccessLevel.PROTECTED)
     private OrzAuthProps props;
 
-    @Getter(AccessLevel.PROTECTED)
-    @Setter(AccessLevel.PROTECTED)
-    private ObjectMapper objectMapper;
-
-    @Getter(AccessLevel.PROTECTED)
-    @Setter(AccessLevel.PROTECTED)
+    private String defaultTokenIssuer;
     private OrzAuthTokenStore tokenStore;
 
     protected OrzAuthService() {
@@ -75,16 +70,18 @@ public abstract class OrzAuthService implements InitializingBean {
         if (props == null) {
             props = OrzBaseUtils.getAppContext().getBean(OrzAuthProps.class);
         }
-        if (objectMapper == null) {
-            objectMapper = OrzBaseUtils.getAppContext().getBean(ObjectMapper.class);
-        }
-        if (tokenStore == null) {
-            tokenStore = obtainTokenStore();
-        }
+        defaultTokenIssuer = props.getTokenConfig(scope).getIssuer();
+        OrzBaseUtils.getAppContext().getBean(OrzAuthManager.class).registerService(this);
     }
 
-    public OrzAuthTokenBo createToken(String userId, String userType, String clientType, @Nullable Map<String, Object> extras) {
+    public OrzAuthTokenInfoBo createToken(String userId, String userType, String clientType, @Nullable Map<String, Object> extras) {
+        return createToken(userId, userType, clientType, extras, null);
+    }
+
+    public OrzAuthTokenInfoBo createToken(String userId, String userType, String clientType, @Nullable Map<String, Object> extras, @Nullable String issuer) {
+        issuer = defaultIssuer(issuer);
         var tokenConfig = props.getTokenConfig(scope);
+        var tokenStore = selectTokenStore(issuer);
 
         var uuid = UUID.randomUUID().toString();
         var createTime = OffsetDateTime.now();
@@ -97,6 +94,7 @@ public abstract class OrzAuthService implements InitializingBean {
                 accessTokenExpiresTime,
                 createTime,
                 OrzAuthTokenTypeBo.ACCESS,
+                issuer,
                 extras
         ));
 
@@ -109,24 +107,49 @@ public abstract class OrzAuthService implements InitializingBean {
                 refreshTokenExpiresTime,
                 createTime,
                 OrzAuthTokenTypeBo.REFRESH,
+                issuer,
                 extras
         ));
 
-        return new OrzAuthTokenBo(
+        return new OrzAuthTokenInfoBo(
                 userId,
                 userType,
                 accessToken,
                 refreshToken,
                 accessTokenExpiresTime,
                 refreshTokenExpiresTime,
+                issuer,
                 extras
         );
     }
 
-    public OrzAuthTokenBo refreshToken(String token) throws OrzAuthTokenVerifyException {
-        var tokenPayload = tokenStore.verifyToken(token, OrzAuthTokenTypeBo.REFRESH);
+    public OrzAuthTokenInfoBo refreshToken(String token) throws OrzAuthTokenVerifyException {
+        return refreshToken(token, null);
+    }
+
+    public OrzAuthTokenInfoBo refreshToken(String token, @Nullable String issuer) throws OrzAuthTokenVerifyException {
+        var tokenIssuer = defaultIssuer(issuer);
+        var tokenPayload = selectTokenStore(tokenIssuer).verifyToken(token, OrzAuthTokenTypeBo.REFRESH);
         checkTokenPayload(tokenPayload);
-        return createToken(tokenPayload.getUserId(), tokenPayload.getUserType(), tokenPayload.getClientType(), tokenPayload.getExtras());
+        return createToken(tokenPayload.getUserId(), tokenPayload.getUserType(), tokenPayload.getClientType(), tokenPayload.getExtras(), tokenIssuer);
+    }
+
+    protected OrzAuthTokenStore selectTokenStore(String issuer) {
+        if (issuer.equals(defaultTokenIssuer)) {
+            if (tokenStore != null) {
+                return tokenStore;
+            }
+            synchronized (this) {
+                if (tokenStore == null) {
+                    var jwtConfig = props.getJwtConfig(scope);
+                    var jsonMapper = OrzBaseUtils.getAppContext().getBean(JsonMapper.class);
+                    tokenStore = new OrzAuthJwtTokenStore(jsonMapper, jwtConfig.getJksPath(), jwtConfig.getJksPassword(), jwtConfig.getJksAliasName(), jwtConfig.getJksAliasPassword());
+                }
+            }
+            return tokenStore;
+        } else {
+            throw new OrzUnexpectedException("issuer not support: " + issuer);
+        }
     }
 
     public void authorize(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -140,19 +163,14 @@ public abstract class OrzAuthService implements InitializingBean {
             }
             var userPayload = obtainUserPayload(context);
             if (userPayload != null) {
-                OrzBaseUtils.setRequestAttribute(USER_PAYLOAD_ATTRIBUTE_NAME, userPayload);
+                OrzWebUtils.setRequestAttribute(USER_PAYLOAD_ATTRIBUTE_NAME, userPayload);
             }
-            OrzBaseUtils.setRequestAttribute(TOKEN_PAYLOAD_ATTRIBUTE_NAME, context.getTokenPayload());
+            OrzWebUtils.setRequestAttribute(TOKEN_PAYLOAD_ATTRIBUTE_NAME, context.getTokenPayload());
         }
     }
 
     protected String obtainScope() {
         return OrzWebUtils.getScope(getClass());
-    }
-
-    protected OrzAuthTokenStore obtainTokenStore() {
-        var jwtConfig = props.getJwtConfig(scope);
-        return new OrzAuthTokenStoreJwt(objectMapper, jwtConfig.getJksPath(), jwtConfig.getJksPassword(), jwtConfig.getJksAliasName(), jwtConfig.getJksAliasPassword());
     }
 
     protected OrzAuthConfigBo obtainConfig(OrzAuthContextBo context) {
@@ -198,7 +216,7 @@ public abstract class OrzAuthService implements InitializingBean {
             return nullOrThrow.apply(new ResponseStatusException(401, "header authorization not provided", null));
         }
 
-        if (!StringUtils.startsWithIgnoreCase(authorization, "bearer ")) {
+        if (!Strings.CI.startsWith(authorization, "bearer ")) {
             return nullOrThrow.apply(new ResponseStatusException(401, "header authorization not bearer", null));
         }
 
@@ -207,12 +225,18 @@ public abstract class OrzAuthService implements InitializingBean {
             return nullOrThrow.apply(new ResponseStatusException(401, "access token not provided", null));
         }
 
+        var tokenIssuer = defaultIssuer(context.getRequest().getHeader("Orz-Token-Issuer"));
         try {
-            var tokenPayload = tokenStore.verifyToken(accessToken, OrzAuthTokenTypeBo.ACCESS);
+            var tokenPayload = selectTokenStore(tokenIssuer).verifyToken(accessToken, OrzAuthTokenTypeBo.ACCESS);
             checkTokenPayload(tokenPayload);
             return tokenPayload;
         } catch (OrzAuthTokenVerifyException e) {
-            return nullOrThrow.apply(new ResponseStatusException(401, e.getError().name(), e));
+            return nullOrThrow.apply(switch (e.getError()) {
+                case TOKEN_INVALID, TOKEN_EXPIRED -> new ResponseStatusException(401, e.getError().name(), e);
+                case INTERNAL_ERROR -> new OrzUnexpectedException(
+                        "error", e.getError(), "tokenIssuer", tokenIssuer, e
+                );
+            });
         }
     }
 
@@ -307,5 +331,9 @@ public abstract class OrzAuthService implements InitializingBean {
     @Nullable
     protected Object obtainUserPayload(OrzAuthContextBo context) {
         return null;
+    }
+
+    private String defaultIssuer(@Nullable String issuer) {
+        return StringUtils.isNotBlank(issuer) ? issuer : defaultTokenIssuer;
     }
 }
